@@ -421,7 +421,6 @@ The ACL table or ACL rule displays a status of **Inactive**.
 - The ACL JSON file contains unsupported or invalid keys.
 - Required objects (`ACL_TABLE` or `ACL_RULE`) are missing.
 - The ACL type, stage, or attributes are not supported by the installed SAI SDK version.
-- The JSON file structure is incorrect.
 
 #### Recommended Actions
 1. Verify that the ACL JSON uses only supported keys and attributes.
