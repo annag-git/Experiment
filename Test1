@@ -1,0 +1,81 @@
+Layer 3 service gateway for interconnecting SRv6 domains
+A Layer 3 service gateway is a mechanism that
+
+extends L3 services between two distinct SRv6 domains
+
+enables seamless service continuity on both control and data planes for SRv6-based networks, and
+
+facilitates route re-origination and summarization between SRv6 VPNv4 and VPNv6 address families.
+
+Table 2. Feature History Table
+Feature Name
+
+Release
+
+Description
+
+Layer 3 service gateway for interconnecting SRv6 domains
+
+Release 25.3.1
+
+Introduced in this release on: Fixed Systems (8200 [ASIC: Q200, P100], 8700 [ASIC: P100, K100], 8010 [ASIC: A100]); Centralized Systems (8600 [ASIC: Q200]); Modular Systems (8800 [LC ASIC: Q200, P100])
+
+Optimize network scalability and interoperability by reducing SID resource usage, and enabling seamless integration between distinct SRv6 domains. The Layer 3 service gateway provides a flexible mechanism to extend Layer 3 services across different SRv6 networks, supporting efficient route summarization, cross-locator compatibility, and consistent service continuity on both control and data planes.
+
+Key concepts
+Route re-origination is the process by which a network device, such as a Layer 3 service gateway, receives routes from one network domain and then advertises those routes as if they originated from itself in another domain. The received routes from one address family are imported and updated with a next-hop set to self and a locally generated SID. These routes are then re-advertised either within the same address family or into another compatible address family, appearing as newly originated routes from the gateway. This process is essential for stitching or interworking between different VPN address families, ensuring consistent route distribution and reachability across SRv6 domains.
+
+Route summarization is the process of consolidating multiple specific routes into a single, more general route before advertising it into another domain. For example, several contiguous prefixes can be aggregated into a broader prefix, reducing the number of routes and SIDs that must be managed and propagated. This optimization applies to both VPNv4 and VPNv6 address families.
+
+Key challenges
+Managing large-scale networks while ensuring interoperability between different SRv6 domains involves two major challenges:
+
+Encap ID consumption optimization: Large SRv6 networks generate numerous unique Segment Identifiers (SIDs), which can exhaust Encap ID resources on remote Provider Edge (PE) devices. This limitation impacts network scalability and efficiency.
+
+Interconnecting SRv6 domains: Different SRv6 domains may use varying locator formats, such as base format and uSID-based locators, complicating seamless inter-domain connectivity and service continuity.
+
+Cross-locator format interoperability: Supports both same-format (base-to-base or uSID-to-uSID) and different-format (base-to-uSID or uSID-to-base) domain interconnections, providing flexible integration for heterogeneous SRv6 deployments.
+
+The Layer 3 service gateway addresses key challenges in large-scale SRv6 deployments by optimizing Encap ID consumption through network partitioning and SID summarization, and by interconnecting SRv6 domains that use different locator formats (base format and uSID-based) through Route Policy Language (RPL) based SID allocation.
+
+Feature benefits
+The SRv6 Layer 3 service gateway addresses these challenges by:
+
+Network partitioning and SID summarization: Partitions the network into core and regional domains, enabling SID summarization and route re-origination at the gateway. This reduces the number of unique SIDs propagated into the core, optimizing Encap ID resource usage and simplifying network scaling
+
+Flexible interconnection across domains: Acts as an effective intermediary to extend layer 3 VPN services across distinct SRv6 domains, ensuring seamless service delivery and integration.
+
+Interconnecting different locator formats: Supports both base format and uSID locators, enabling interoperability between heterogeneous SRv6 deployments. Route Policy Language (RPL)-based SID allocation ensures that SIDs are allocated from the appropriate locator format for each prefix.
+
+Robust control and data Plane operations: Facilitates route re-origination, summarization, importing, and re-advertising of service routes for both VPNv4 and VPNv6 address families, improving route management and efficiency. Also supports critical data plane functions such as packet pop/decapsulation, IP lookup, and encapsulation/push operations for smooth packet forwarding.
+
+Service continuity for IPv4 and IPv6 VPNs: Manages routing information and maintains seamless service continuity across both control and data planes for SRv6-based networks, supporting both IPv4 and IPv6 VPNs.
+
+From Release 26.1.1, Cisco IOS XR software sets the VLAN Priority Code Point (PCP) field based on the SRv6 header's Differentiated Services Code Point (DSCP) value rather than being fixed at zero. This optimization enables proper Quality of Service (QoS) marking and propagation through the VLAN header in the Interworking (IW) Gateway.
+
+How SRv6 L3 service gateway works
+Configure SRv6 layer 3 service gateway with different SID formats
+Configure SRv6 layer 3 service gateway with same SID formats
+How SRv6 L3 service gateway works
+The SRv6 L3 service gateway provides a robust solution for interconnecting disparate SRv6 domains. It enables efficient network partitioning and ensures seamless data plane connectivity and interoperability between domains that use different SRv6 formats. The process covers both scenarios where the source and destination SRv6 domains use the same SID format and where they use different SID formats.
+
+Summary
+The key components involved in the process are:
+
+SRv6 L3 service gateway: The central network device that acts as a bridge, performing decapsulation, IP lookup, and re-encapsulation to forward traffic between SRv6 domains.
+
+SRv6 domains: Distinct network segments that utilize SRv6 technology and are interconnected by the gateway.
+
+Traffic (data plane): The IP packets and their associated SRv6 headers that flow through the gateway, undergoing transformation.
+
+Regional domains: Specific SRv6 domains representing partitioned parts of a larger L3VPN network, connected to a core domain through the gateway.
+
+Core domain: The central SRv6 domain in a partitioned L3VPN network, connected to regional domains through the gateway.
+
+Base format SRv6 locators: A specific format of SRv6 locators used within certain SRv6 domains.
+
+uSID-based SRv6 locators: Another specific format of SRv6 locators used within different SRv6 domains.
+
+Route Policy Language (RPL): RPL is a mechanism used by the gateway to determine which locator format (base or uSID) is assigned to each prefix. RPL selects the appropriate SID format for each prefix, but only one SID can be allocated per prefix at the gateway.
+
+The SRv6 L3 service gateway, acting as a central network device, interconnects disparate SRv6 domains. It achieves this by performing control plane SID re-origination, summarization, and format translation, alongside data plane packet decapsulation, IP lookup, and re-encapsulation. This comprehensive process ensures efficient network partitioning, seamless data plane connectivity, and interoperability across domains with varying SRv6 SID formats.
