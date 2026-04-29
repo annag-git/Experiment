@@ -7,14 +7,11 @@ enables seamless service continuity on both control and data planes for SRv6-bas
 
 facilitates route re-origination and summarization between SRv6 VPNv4 and VPNv6 address families.
 
-Table 2. Feature History Table
-Feature Name
+Feature History Table
 
-Release
 
-Description
 
-Layer 3 service gateway for interconnecting SRv6 domains
+L3 service gateway for interconnecting SRv6 domains
 
 Release 25.3.1
 
