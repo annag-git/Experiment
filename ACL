@@ -14,7 +14,7 @@ Access Control Lists (ACLs) are rule-based filters that
 * ACL implementation: The actual enforcement of ACLs is done in the hardware forwarding plane using ASIC’s TCAM (Ternary Content-Addressable Memory). SONiC uses the Switch Abstraction Interface (SAI) to program the ASIC hardware, abstracting the hardware specifics.
 * ACL rule structure: Each ACL rule consists of match criteria (e.g., IP addresses, protocol types, ports) and an action (permit or deny).
 * Rules are processed in priority order; lower priority values have higher precedence.
-* ACL application: ACLs are applied to interfaces, VLAN, or , specifying whether they filter inbound (ingress) or outbound (egress) traffic.
+* ACL application: ACLs are applied to interfaces, VLAN,  specifying whether they filter inbound (ingress) or outbound (egress) traffic.
 
 
 ## Configure ACL in SONiC on Cisco 8000 Series Switches
