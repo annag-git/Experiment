@@ -1,0 +1,529 @@
+# Access Control List
+
+Access Control Lists (ACLs) are rule-based filters that 
+
+* control network traffic by permitting or denying packets based on match criteria such as IP addresses, protocols, ports, and other packet header fields.
+* help in controlling traffic flow and 
+* enhance security by filtering unwanted or malicious traffic.
+
+
+## Key concepts of ACL in SONiC on Cisco 8000 Series Switches
+
+* ACL types: SONiC supports both IPv4 and IPv6 ACLs, which can be applied to interfaces in either ingress or egress directions.
+* ACL configuration Storage: ACL configurations are stored in SONiC’s central Redis CONFIG_DB, which acts as the source of truth for all device configurations. This database holds ACL rules and their associations with interfaces.
+* ACL implementation: The actual enforcement of ACLs is done in the hardware forwarding plane using ASIC’s TCAM (Ternary Content-Addressable Memory). SONiC uses the Switch Abstraction Interface (SAI) to program the ASIC hardware, abstracting the hardware specifics.
+* ACL rule structure: Each ACL rule consists of match criteria (e.g., IP addresses, protocol types, ports) and an action (permit or deny). Rules are processed in order, and the first matching rule determines the packet’s fate.
+* ACL application: ACLs are applied to interfaces or vlan, specifying whether they filter inbound (ingress) or outbound (egress) traffic.
+
+
+## Configure ACL in SONiC on Cisco 8000 Series Switches
+
+Use this task to configure, verify, and remove an ACL on a Cisco 8000 Series switch running SONiC.
+
+<b>Before You Begin </b>
+
+* Ensure that the ACL JSON uses only keys and values supported by the installed SAI SDK version.
+* You must define both ACL_TABLE and ACL_RULE objects for the ACL to become active.
+  
+<b>Procedure</b>
+1. Create a JSON file that defines the ACL table and rules using supported SAI attributes.
+    Note: If the JSON file contains unsupported ACL keys, the ACL remains Inactive in SONiC.
+2. Load the ACL JSON file into the running configuration.
+   This action adds the ACL configuration to the Redis CONFIG_DB, which acts as the source of truth for SONiC.
+3. Save the running configuration using the sudo config save -y  command to make the ACL persistent across reloads.
+   This step writes the configuration to /etc/sonic/config_db.json.
+4. Verify that the ACL table and rules are created and active.
+    Confirm that:
+    * The ACL table is present.
+    * The ACL rules are correctly applied.
+    * The ACL status is active.
+
+
+### Remove ACL configuration 
+
+To remove the ACL configuration, perform these steps.
+
+1.	Delete the ACL entries from /etc/sonic/config_db.json.
+2.	Reload the configuration to apply the changes using the sudo config reload -y command.
+    This action removes the ACL from the running configuration and the hardware.
+
+
+
+### Example: Permit IPv4 Traffic on an Ingress Interface
+
+This example shows how to configure a simple Layer 3 ACL that permits IPv4 traffic from a source subnet to a destination subnet on an ingress interface.
+
+<b>Scenario</b>
+
+* Traffic direction: Ingress 
+* Interface: Ethernet8 
+* Action: Permit (FORWARD) 
+* Priority: 10 
+* Rule number: 70 
+* Source subnet: 192.0.2.0/24 
+* Destination subnet: 198.51.100.0/24
+
+
+Notes
+* If the ACL status is Inactive, verify that all JSON keys are supported by the installed SAI SDK version.
+* ACL rules are evaluated based on priority; lower values have higher precedence.
+
+
+1. Create a JSON file that defines the ACL table and rule.
+
+
+```ACL JSON Configuration
+
+    {
+      "ACL_TABLE": {
+        "SONiC_ACE": {
+          "policy_desc": "SONiC ACL",
+          "type": "L3",
+          "services": [],
+          "stage": "INGRESS",
+          "ports": [
+            "Ethernet8"
+          ]
+        }
+      },
+      "ACL_RULE": {
+        "SONiC_ACE|70": {
+          "PRIORITY": 10,
+          "PACKET_ACTION": "FORWARD",
+          "SRC_IP": "192.0.2.0/24",
+          "DST_IP": "198.51.100.0/24",
+          "IP_TYPE": "IP"
+        }
+      }
+    }
+
+```
+
+2. Load the JSON file into the running configuration and save it to make the configuration persistent.
+```ACL_SONiC
+    sudo config load /tmp/sonic_acl.json -y
+    sudo config save -y
+    Loading the configuration writes the ACL to the Redis CONFIG_DB.
+    Saving the configuration writes the ACL to /etc/sonic/config_db.json.
+```
+
+3. Verify the ACL configuration.
+
+a. Verify that the ACL table is created and active.
+
+```ACL_SONiC
+    show acl table
+
+    Expected output (example):
+
+    Name       Type    Binding    Description    Stage    Status
+  ---------  ------  ---------  -------------  -------  --------
+  SONiC_ACE  L3      Ethernet8  SONiC ACL      ingress  Active
+
+```
+b. Verify that the ACL rule is active.
+
+```ACL_SONiC
+show acl rule
+
+Expected output (example):
+Table      Rule    Priority    Action    Match                Status
+---------  ------  ----------  --------  -------------------  --------
+SONiC_ACE  70      10          FORWARD   SRC_IP: 192.0.2.0/24 Active
+                                         DST_IP: 198.51.100.0/24
+                                         IP_TYPE: IP
+
+```
+c. (Optional) Display detailed rule information.
+
+```ACL_SONiC
+show acl rule SONiC_ACE 70 --verbose
+    
+```
+
+### Example 2: Configure Multiple ACL Rules in a Single ACL Table
+
+This example shows how to configure an ingress Layer 3 ACL that contains 10 permit rules. Each rule permits IPv4 traffic between a unique source and destination subnet on a single interface.
+
+**Scenario**
+
+* ACL direction: Ingress 
+* ACL type: Layer 3 
+* Interface: Ethernet8 
+* Number of rules: 10 
+* Action: Permit (FORWARD) 
+* Evaluation: Based on rule priority
+
+Notes
+* Unsupported JSON keys cause the ACL to remain inactive.
+* Lower priority values are evaluated first.
+* Always save the configuration to ensure persistence across reloads.
+* If the ACL JSON file contains unsupported keys, the ACL remains Inactive.
+ 
+**ACL Rule Summary**
+
+| Priority | Source Subnet        | Destination Subnet     |
+|---------:|----------------------|------------------------|
+| 10       | 192.0.2.0/24         | 198.51.100.0/24        |
+| 20       | 192.0.2.0/24         | 203.0.113.0/24         |
+| 30       | 198.51.100.0/24      | 192.0.2.0/24           |
+| 40       | 198.51.100.0/24      | 203.0.113.0/24         |
+| 50       | 203.0.113.0/24       | 192.0.2.0/24           |
+| 60       | 203.0.113.0/24       | 198.51.100.0/24        |
+| 70       | 192.0.2.128/25       | 198.51.100.128/25      |
+| 80       | 198.51.100.128/25    | 203.0.113.128/25       |
+| 90       | 203.0.113.128/25     | 192.0.2.128/25         |
+| 100      | 192.0.2.64/26        | 203.0.113.64/26        |
+
+
+
+1. Create a JSON file that defines one ACL table and ten ACL rules.
+
+
+
+```ACL JSON Configuration
+{
+  "ACL_TABLE": {
+    "SONiC_ACE": {
+      "policy_desc": "IPv4 ACL table",
+      "type": "L3",
+      "services": [],
+      "stage": "INGRESS",
+      "ports": [
+        "Ethernet8"
+      ]
+    }
+  },
+  "ACL_RULE": {
+    "SONiC_ACE|10": {
+      "PRIORITY": 10,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "192.0.2.0/24",
+      "DST_IP": "198.51.100.0/24",
+      "IP_TYPE": "IP"
+    },
+    "SONiC_ACE|20": {
+      "PRIORITY": 20,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "192.0.2.0/24",
+      "DST_IP": "203.0.113.0/24",
+      "IP_TYPE": "IP"
+    },
+    "SONiC_ACE|30": {
+      "PRIORITY": 30,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "198.51.100.0/24",
+      "DST_IP": "192.0.2.0/24",
+      "IP_TYPE": "IP"
+    },
+    "SONiC_ACE|40": {
+      "PRIORITY": 40,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "198.51.100.0/24",
+      "DST_IP": "203.0.113.0/24",
+      "IP_TYPE": "IP"
+    },
+    "SONiC_ACE|50": {
+      "PRIORITY": 50,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "203.0.113.0/24",
+      "DST_IP": "192.0.2.0/24",
+      "IP_TYPE": "IP"
+    },
+    "SONiC_ACE|60": {
+      "PRIORITY": 60,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "203.0.113.0/24",
+      "DST_IP": "198.51.100.0/24",
+      "IP_TYPE": "IP"
+    },
+    "SONiC_ACE|70": {
+      "PRIORITY": 70,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "192.0.2.128/25",
+      "DST_IP": "198.51.100.128/25",
+      "IP_TYPE": "IP"
+    },
+    "SONiC_ACE|80": {
+      "PRIORITY": 80,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "198.51.100.128/25",
+      "DST_IP": "203.0.113.128/25",
+      "IP_TYPE": "IP"
+    },
+    "SONiC_ACE|90": {
+      "PRIORITY": 90,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "203.0.113.128/25",
+      "DST_IP": "192.0.2.128/25",
+      "IP_TYPE": "IP"
+    },
+    "SONiC_ACE|100": {
+      "PRIORITY": 100,
+      "PACKET_ACTION": "FORWARD",
+      "SRC_IP": "192.0.2.64/26",
+      "DST_IP": "203.0.113.64/26",
+      "IP_TYPE": "IP"
+    }
+  }
+}
+
+    
+```
+2. Load and save the ACL configuration.
+
+a. Load the JSON file into the running configuration.
+
+```ACL_SONiC
+sudo config load /tmp/SONiC10.json -y
+
+```
+
+b. Save the configuration to make it persistent.
+
+```ACL_SONiC
+sudo config save -y
+```
+
+3. Verify the ACL configuration.
+
+a. Verify that all ACL rules are active.
+```ACL_SONiC
+show acl rule
+
+```
+
+Expected result:
+•	All ten rules are displayed.
+•	Each rule shows Status: Active.
+•	Rules are evaluated in ascending priority order.
+
+
+b. Verify the ACL table status.
+
+```ACL_SONiC
+show acl table
+Expected result:
+Name       Type    Binding    Description     Stage    Status
+---------  ------  ---------  --------------  -------  --------
+SONiC_ACE  L3      Ethernet8  IPv4 ACL table  ingress  Active
+```
+
+
+### Example 3: Configure an Ingress ACL with Layer 4 Source and Destination Ports
+
+
+This example shows how to configure an ingress Layer 3 ACL that permits TCP traffic based on source and destination IPv4 subnets and Layer 4 source and destination port numbers.
+ 
+Scenario
+•	ACL direction: Ingress 
+•	ACL type: Layer 3 
+•	Interface: Ethernet8 
+•	Protocol: TCP 
+•	Layer 4 source port: 8000 
+•	Layer 4 destination port: 80 
+•	Action: Permit (FORWARD)
+
+
+Notes:
+* Use IP_PROTOCOL: 6 to match TCP traffic.
+* Ensure that Layer 4 port matching is supported by the installed SAI SDK.
+* If the ACL JSON file contains unsupported keys, the ACL remains Inactive.
+ 
+1. Create a JSON file that defines the ACL table and rule.
+
+```ACL JSON Configuration
+{
+  "ACL_TABLE": {
+    "SONiC_ACE": {
+      "policy_desc": "SONiC ACL with TCP source and destination ports",
+      "type": "L3",
+      "stage": "INGRESS",
+      "ports": [
+        "Ethernet8"
+      ]
+    }
+  },
+  "ACL_RULE": {
+    "SONiC_ACE|10": {
+      "PRIORITY": 10,
+      "PACKET_ACTION": "FORWARD",
+      "IP_PROTOCOL": 6,
+      "SRC_IP": "192.0.2.0/24",
+      "DST_IP": "198.51.100.0/24",
+      "L4_SRC_PORT": 8000,
+      "L4_DST_PORT": 80,
+      "IP_TYPE": "IP"
+    }
+  }
+}
+```
+
+Step 2: Load the JSON file into the running configuration. This action writes the ACL configuration to the Redis CONFIG_DB.
+
+```ACL_SONiC
+sudo config load /tmp/SONiC_L4.json -y
+
+```
+
+ 
+Step 3: Save the configuration to make the ACL persistent across reloads. This action writes the configuration to /etc/sonic/config_db.json.
+
+```
+sudo config save -y
+```
+
+ 
+Step 4: Verify the ACL configuration. 
+
+a. Verify that the ACL rule is active.
+
+```ACL_SONiC
+show acl rule
+
+Expected output (example):
+Table      Rule    Priority    Action    Match                Status
+---------  ------  ----------  --------  -------------------  --------
+SONiC_ACE  10      10          FORWARD   SRC_IP: 192.0.2.0/24 Active
+                                         DST_IP: 198.51.100.0/24
+                                         IP_PROTOCOL: 6
+                                         IP_TYPE: IP
+                                         L4_SRC_PORT: 8000
+                                         L4_DST_PORT: 80
+
+```
+b. Verify the ACL table status.
+
+```ACL_SONiC
+show acl table
+
+Expected output (example):
+Name       Type    Binding    Description                                 Stage    Status
+---------  ------  ---------  ------------------------------------------  -------  --------
+SONiC_ACE  L3      Ethernet8  SONiC ACL with TCP source and destination ports  ingress  Active
+
+```
+
+
+## Troubleshooting ACL configuration in SONiC
+
+Use this section to diagnose and resolve common issues when configuring Access Control Lists (ACLs) on Cisco 8000 Series switches running SONiC.
+
+---
+
+### ACL Is Inactive
+
+#### Symptom
+The ACL table or ACL rule displays a status of **Inactive**.
+
+#### Possible Causes
+- The ACL JSON file contains unsupported or invalid keys.
+- Required objects (`ACL_TABLE` or `ACL_RULE`) are missing.
+- The ACL type, stage, or attributes are not supported by the installed SAI SDK version.
+- The JSON file structure is incorrect.
+
+#### Recommended Actions
+1. Verify that the ACL JSON uses only supported keys and attributes.
+2. Ensure that both `ACL_TABLE` and `ACL_RULE` objects are defined.
+3. Confirm that the ACL type and stage are supported by the SAI SDK.
+4. Correct any JSON formatting or syntax errors.
+5. Reload the configuration after making corrections.
+
+---
+
+### ACL Is Active but Traffic Is Not Filtered
+
+#### Symptom
+The ACL status is **Active**, but traffic is not permitted or denied as expected.
+
+#### Possible Causes
+- Rule priorities are misconfigured.
+- The ACL is applied in the wrong direction.
+- The ACL is bound to an incorrect interface.
+- The traffic does not match all rule criteria.
+
+#### Recommended Actions
+1. Review ACL rule priorities and ensure correct evaluation order.
+2. Verify whether the ACL is applied in the ingress or egress direction.
+3. Confirm that the ACL is bound to the intended interface.
+4. Validate that traffic matches all configured match fields.
+
+---
+
+### Configuration Does Not Persist After Reload
+
+#### Symptom
+The ACL configuration is lost after a system reload.
+
+#### Possible Cause
+- The running configuration was not saved.
+
+#### Recommended Action
+- Save the configuration after loading the ACL JSON file to ensure persistence.
+
+---
+
+### Configuration Load Fails
+
+#### Symptom
+The ACL configuration fails to load or produces errors during the load operation.
+
+#### Possible Causes
+- The JSON file path is incorrect.
+- The JSON file contains syntax errors.
+- ACL table or rule names are duplicated.
+- Unsupported ACL attributes are used.
+
+#### Recommended Actions
+1. Verify the JSON file path and file name.
+2. Validate the JSON syntax.
+3. Ensure that ACL table names and rule identifiers are unique.
+4. Remove unsupported keys and reload the configuration.
+
+---
+
+### ACL Is Not Applied to the Expected Interface
+
+#### Symptom
+The ACL exists but does not affect traffic on the intended interface.
+
+#### Possible Causes
+- The ACL is not bound to the correct port.
+- The interface name is incorrect or misspelled.
+
+#### Recommended Actions
+1. Verify the interface binding in the `ACL_TABLE` configuration.
+2. Confirm that the interface name matches the system interface naming.
+
+---
+
+### Verification Checklist
+
+Use this checklist to confirm a valid ACL configuration:
+
+* ACL table status is **Active**
+* ACL rule status is **Active**
+* ACL table and rules are correctly defined
+* Rule priorities are correctly ordered
+* ACL is bound to the intended interface
+* Configuration is saved to `/etc/sonic/config_db.json`
+
+---
+
+### Useful Commands
+
+| Purpose | Command |
+|-------|---------|
+| Display ACL tables | `show acl table` |
+| Display ACL rules | `show acl rule` |
+| Display detailed rule information | `show acl rule <table-name> <rule> --verbose` |
+| Reload configuration | `sudo config reload -y` |
+
+---
+
+### Best Practices
+
+- Use only documented and supported ACL attributes.
+- Assign unique rule priorities within an ACL table.
+- Test ACL behavior in a controlled environment before deployment.
+- Always save the configuration after loading changes.
