@@ -7,7 +7,7 @@ Access Control Lists (ACLs) are rule-based filters that
 * enhance security by filtering unwanted or malicious traffic.
 
 
-## Key concepts of ACL in SONiC 
+## Key concepts of ACL in SONiC on Cisco 8000 Series Switches
 
 * ACL types: SONiC supports both IPv4 and IPv6 ACLs, which can be applied to interfaces in either ingress or egress directions.
 * ACL configuration Storage: ACL configurations are stored in SONiC’s central Redis CONFIG_DB, which acts as the source of truth for all device configurations. This database holds ACL rules and their associations with interfaces.
@@ -31,8 +31,8 @@ Use this task to configure, verify, and remove an ACL on a Cisco 8000 Series swi
     Note: If the JSON file contains unsupported ACL keys, the ACL remains Inactive in SONiC.
 2. Load the ACL JSON file into the running configuration.
    This action adds the ACL configuration to the Redis CONFIG_DB, which acts as the source of truth for SONiC.
-3. Save the running configuration using the 'sudo config save -y'  command to make the ACL persistent across reloads.
-   This step writes the configuration to /etc/sonic/config_db.json.
+3. Save the running configuration using the `sudo config save -y` command to make the ACL persistent across reloads.
+   This step writes the configuration to `/etc/sonic/config_db.json`.
 4. Verify that the ACL table and rules are created and active.
     Confirm that:
     * The ACL table is present.
@@ -44,13 +44,13 @@ Use this task to configure, verify, and remove an ACL on a Cisco 8000 Series swi
 
 To remove the ACL configuration, perform these steps.
 
-1.	Delete the ACL entries from /etc/sonic/config_db.json.
-2.	Reload the configuration to apply the changes using the sudo config reload -y command.
+1.	Delete the ACL entries from `/etc/sonic/config_db.json`.
+2.	Reload the configuration to apply the changes using the `sudo config reload -y` command.
     This action removes the ACL from the running configuration and the hardware.
 
 
 
-### Example: Permit IPv4 Traffic on an Ingress Interface
+### Example 1: Permit IPv4 Traffic on an Ingress Interface
 
 This example shows how to configure a simple Layer 3 ACL that permits IPv4 traffic from a source subnet to a destination subnet on an ingress interface.
 
@@ -368,7 +368,7 @@ sudo config load /tmp/SONiC_L4.json -y
 ```
 
  
-Step 3: Save the configuration to make the ACL persistent across reloads. This action writes the configuration to /etc/sonic/config_db.json.
+Step 3: Save the configuration to make the ACL persistent across reloads. This action writes the configuration to `/etc/sonic/config_db.json`.
 
 ```
 sudo config save -y
