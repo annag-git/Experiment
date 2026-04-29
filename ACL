@@ -31,7 +31,7 @@ Use this task to configure, verify, and remove an ACL on a Cisco 8000 Series swi
     Note: If the JSON file contains unsupported ACL keys, the ACL remains Inactive in SONiC.
 2. Load the ACL JSON file into the running configuration.
    This action adds the ACL configuration to the Redis CONFIG_DB, which acts as the source of truth for SONiC.
-3. Save the running configuration using the sudo config save -y  command to make the ACL persistent across reloads.
+3. Save the running configuration using the 'sudo config save -y'  command to make the ACL persistent across reloads.
    This step writes the configuration to /etc/sonic/config_db.json.
 4. Verify that the ACL table and rules are created and active.
     Confirm that:
