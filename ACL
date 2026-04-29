@@ -7,7 +7,7 @@ Access Control Lists (ACLs) are rule-based filters that
 * enhance security by filtering unwanted or malicious traffic.
 
 
-## Key concepts of ACL in SONiC on Cisco 8000 Series Switches
+## Key concepts of ACL in SONiC 
 
 * ACL types: SONiC supports both IPv4 and IPv6 ACLs, which can be applied to interfaces in either ingress or egress directions.
 * ACL configuration Storage: ACL configurations are stored in SONiC’s central Redis CONFIG_DB, which acts as the source of truth for all device configurations. This database holds ACL rules and their associations with interfaces.
